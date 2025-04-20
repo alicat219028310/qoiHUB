@@ -1,0 +1,186 @@
+-- Create Intro GUI
+local introGui = Instance.new("ScreenGui")
+introGui.Name = "IntroGui"
+introGui.Parent = game.CoreGui
+
+local introLabel = Instance.new("TextLabel")
+introLabel.Size = UDim2.new(0, 400, 0, 100)
+introLabel.Position = UDim2.new(0.5, -200, 0.5, -50)
+introLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+introLabel.BorderSizePixel = 0
+introLabel.Text = "🌟 QOI HUB 🌟"
+introLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+introLabel.TextSize = 36
+introLabel.Font = Enum.Font.FredokaOne
+introLabel.TextStrokeTransparency = 0
+introLabel.Parent = introGui
+
+wait(2)
+for i = 1, 20 do
+    introLabel.TextTransparency = i * 0.05
+    introLabel.TextStrokeTransparency = i * 0.05
+    wait(0.05)
+end
+introGui:Destroy()
+
+-- Create Main GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SpeedGui"
+screenGui.Parent = game.CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 220, 0, 230)
+frame.Position = UDim2.new(0, 20, 0.5, -90)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+frame.Active = true
+frame.Draggable = true
+
+-- Logo Image
+local logo = Instance.new("ImageLabel")
+logo.Size = UDim2.new(0, 50, 0, 50)
+logo.Position = UDim2.new(0.5, -25, 0, 5)
+logo.BackgroundTransparency = 1
+logo.Image = "rbxassetid://14507258057"  -- Replace with your uploaded logo asset ID
+logo.Parent = frame
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 60)
+title.BackgroundTransparency = 1
+title.Text = "🏃 Walk Speed Controller"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.Parent = frame
+
+-- Slider Button
+local slider = Instance.new("TextButton")
+slider.Size = UDim2.new(1, -20, 0, 30)
+slider.Position = UDim2.new(0, 10, 0, 100)
+slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+slider.Text = "Speed: 16"
+slider.TextColor3 = Color3.new(1, 1, 1)
+slider.Font = Enum.Font.SourceSans
+slider.TextSize = 16
+slider.Parent = frame
+
+-- Invincibility Toggle Button
+local invincibleBtn = Instance.new("TextButton")
+invincibleBtn.Size = UDim2.new(1, -20, 0, 30)
+invincibleBtn.Position = UDim2.new(0, 10, 0, 140)
+invincibleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+invincibleBtn.Text = "🛡️ Invincibility: OFF"
+invincibleBtn.TextColor3 = Color3.new(1, 1, 1)
+invincibleBtn.Font = Enum.Font.SourceSansBold
+invincibleBtn.TextSize = 16
+invincibleBtn.Parent = frame
+
+local invincible = false  -- Track invincibility status
+local damageConnection  -- Store the damage event connection
+
+-- Function to Apply Invincibility to the Player
+local function applyInvincibility(humanoid)
+    if invincible then
+        damageConnection = humanoid.HealthChanged:Connect(function()
+            humanoid.Health = humanoid.MaxHealth  -- Prevent health from decreasing
+        end)
+        invincibleBtn.Text = "🛡️ Invincibility: ON"
+    else
+        if damageConnection then
+            damageConnection:Disconnect()  -- Disconnect the event
+        end
+        invincibleBtn.Text = "🛡️ Invincibility: OFF"
+    end
+end
+
+-- Toggle Invincibility Logic
+invincibleBtn.MouseButton1Click:Connect(function()
+    invincible = not invincible
+    local character = game.Players.LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            applyInvincibility(humanoid)  -- Apply invincibility when toggled
+        end
+    end
+end)
+
+-- Monitor Player Position Every 0.5 Seconds
+local function monitorPosition()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+
+    while true do
+        wait(0.5)  -- Check every 0.5 seconds
+
+        -- Check if player is touching a checkpoint (SpawnLocation)
+        local currentCheckpoint = nil
+        for _, spawn in pairs(game.Workspace:GetChildren()) do
+            if spawn:IsA("SpawnLocation") then
+                if (spawn.Position - character.HumanoidRootPart.Position).magnitude < 10 then
+                    currentCheckpoint = spawn
+                    break
+                end
+            end
+        end
+
+        -- If the player is at a checkpoint, apply invincibility
+        if currentCheckpoint then
+            applyInvincibility(humanoid)
+        end
+    end
+end
+
+-- Apply invincibility to the player when they first spawn or respawn
+game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
+    local humanoid = character:WaitForChild("Humanoid")
+    applyInvincibility(humanoid)  -- Apply invincibility when character respawns
+    monitorPosition()  -- Start monitoring player's position
+end)
+
+-- Speed Logic
+slider.MouseButton1Click:Connect(function()
+    local currentSpeed = tonumber(slider.Text:match("%d+")) or 16
+    local newSpeed = currentSpeed + 4
+    if newSpeed > 100 then newSpeed = 16 end
+    slider.Text = "Speed: " .. tostring(newSpeed)
+    local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = newSpeed
+    end
+end)
+
+-- Create the Separate Remove GUI
+local removeGui = Instance.new("ScreenGui")
+removeGui.Name = "RemoveGui"
+removeGui.Parent = game.CoreGui
+
+local removeFrame = Instance.new("Frame")
+removeFrame.Size = UDim2.new(0, 200, 0, 100)
+removeFrame.Position = UDim2.new(0.5, -100, 0.5, 50)
+removeFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+removeFrame.BorderSizePixel = 0
+removeFrame.Parent = removeGui
+removeFrame.Active = true
+removeFrame.Draggable = true
+
+-- Remove Button in Separate GUI
+local removeBtn = Instance.new("TextButton")
+removeBtn.Size = UDim2.new(1, -20, 0, 30)
+removeBtn.Position = UDim2.new(0, 10, 0, 35)
+removeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+removeBtn.Text = "❌ Remove GUI"
+removeBtn.TextColor3 = Color3.new(1, 1, 1)
+removeBtn.Font = Enum.Font.SourceSansBold
+removeBtn.TextSize = 16
+removeBtn.Parent = removeFrame
+
+-- Remove GUI Logic
+removeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+    removeGui:Destroy()
+end)
